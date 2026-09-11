@@ -10,6 +10,30 @@ const generateToken = (user) => {
   );
 };
 
+// ─── Disposable email domain blocklist ───────────────────────────────────────
+const DISPOSABLE_DOMAINS = new Set([
+  'mailinator.com','guerrillamail.com','tempmail.com','10minutemail.com',
+  'throwaway.email','yopmail.com','sharklasers.com','guerrillamailblock.com',
+  'grr.la','guerrillamail.info','guerrillamail.biz','guerrillamail.de',
+  'guerrillamail.net','guerrillamail.org','spam4.me','trashmail.com',
+  'trashmail.me','trashmail.net','trashmail.at','trashmail.io',
+  'dispostable.com','mailnull.com','spamgourmet.com','spamgourmet.net',
+  'maildrop.cc','spamfree24.org','spamfree.eu','discard.email',
+  'fakeinbox.com','mailnesia.com','mailnull.com','nospam.ze.tc',
+  'humaility.com','jetable.fr.nf','filzmail.com','dispostable.com',
+  'spamex.com','tempr.email','icemail.club','spamherelots.com',
+  'mt2015.com','mt2016.com','mt2017.com','getairmail.com','discard.email',
+  'tempinbox.com','spamfighter.net','fleckens.hu','trashmail.org',
+  'mailseal.de','throwam.com','throwem.com',
+]);
+
+const isDisposableEmail = (email) => {
+  const domain = email.split('@')[1]?.toLowerCase();
+  return domain ? DISPOSABLE_DOMAINS.has(domain) : false;
+};
+
+const isValidEmailFormat = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+
 // ─── Register ─────────────────────────────────────────────────────────────────
 const register = async (req, res) => {
   try {
@@ -17,6 +41,14 @@ const register = async (req, res) => {
 
     if (!name || !email || !password || !role) {
       return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    if (!isValidEmailFormat(email)) {
+      return res.status(400).json({ message: 'Please enter a valid email address.' });
+    }
+
+    if (isDisposableEmail(email)) {
+      return res.status(400).json({ message: 'Disposable email addresses are not allowed. Please use a real email.' });
     }
 
     const existingUser = await User.findOne({ email: email.toLowerCase() });

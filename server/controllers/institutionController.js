@@ -36,83 +36,110 @@ const createOrUpdateProfile = async (req, res) => {
 // ─── Get Dashboard Stats ──────────────────────────────────────────────────────
 const getDashboardStats = async (req, res) => {
   try {
-    // Total students
     const totalStudents = await User.countDocuments({ role: 'student' });
-
-    // All student profiles for skill distribution
-    const studentProfiles = await StudentProfile.find().select('skills skillScores appliedJobs');
+    const studentProfiles = await StudentProfile.find().select('skills skillScores appliedJobs branch department');
 
     // Skill distribution
     const skillCount = {};
-    studentProfiles.forEach((profile) => {
-      profile.skills.forEach((skill) => {
+    studentProfiles.forEach(p => {
+      p.skills.forEach(skill => {
         const name = skill.name?.toLowerCase();
         if (name) skillCount[name] = (skillCount[name] || 0) + 1;
       });
     });
-
     const skillDistribution = Object.entries(skillCount)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-      .map(([skill, count]) => ({ skill, count }));
+      .sort((a, b) => b[1] - a[1]).slice(0, 10).map(([skill, count]) => ({ skill, count }));
 
     // Avg skill score
-    let totalScores = 0;
-    let scoreCount = 0;
-    studentProfiles.forEach((profile) => {
-      profile.skillScores.forEach((s) => {
-        totalScores += s.score;
-        scoreCount++;
-      });
-    });
+    let totalScores = 0; let scoreCount = 0;
+    studentProfiles.forEach(p => p.skillScores.forEach(s => { totalScores += s.score; scoreCount++; }));
     const avgSkillScore = scoreCount > 0 ? Math.round(totalScores / scoreCount) : 0;
 
-    // Placement rate from all jobs
+    // Placement rate
     const allJobs = await Job.find().select('applicants');
-    let totalApplications = 0;
-    let totalSelected = 0;
-    allJobs.forEach((job) => {
+    let totalApplications = 0; let totalSelected = 0;
+    allJobs.forEach(job => {
       totalApplications += job.applicants.length;
-      totalSelected += job.applicants.filter((a) => a.status === 'selected').length;
+      totalSelected += job.applicants.filter(a => a.status === 'selected').length;
     });
-    const placementRate =
-      totalApplications > 0 ? Math.round((totalSelected / totalApplications) * 100) : 0;
+    const placementRate = totalApplications > 0 ? Math.round((totalSelected / totalApplications) * 100) : 0;
+
+    // Profile completeness
+    const profilesWithCompletion = studentProfiles.map(p => {
+      let score = 0;
+      if (p.skills?.length > 0) score += 25;
+      if (p.skillScores?.length > 0) score += 25;
+      if (p.appliedJobs?.length > 0) score += 25;
+      if (p.branch) score += 25;
+      return score;
+    });
+    const avgProfileComplete = profilesWithCompletion.length > 0
+      ? Math.round(profilesWithCompletion.reduce((a, b) => a + b, 0) / profilesWithCompletion.length)
+      : 0;
+
+    // Department-wise placement from real student profiles
+    const deptMap = {};
+    studentProfiles.forEach(p => {
+      const dept = p.branch || 'Unknown';
+      if (!deptMap[dept]) deptMap[dept] = { students: 0, placed: 0 };
+      deptMap[dept].students++;
+      const isPlaced = p.appliedJobs?.some(j => j.status === 'selected');
+      if (isPlaced) deptMap[dept].placed++;
+    });
+    const departmentPlacement = Object.entries(deptMap)
+      .filter(([dept]) => dept !== 'Unknown')
+      .map(([dept, d]) => ({
+        dept,
+        students: d.students,
+        placed: d.placed,
+        rate: d.students > 0 ? Math.round((d.placed / d.students) * 100) : 0,
+      }))
+      .sort((a, b) => b.students - a.students)
+      .slice(0, 8);
 
     res.json({
-      totalStudents,
-      avgSkillScore,
-      skillDistribution,
-      placementRate,
-      totalApplications,
-      totalSelected,
+      totalStudents, avgSkillScore, skillDistribution, placementRate,
+      totalApplications, totalSelected, avgProfileComplete, departmentPlacement,
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
+
 // ─── Get Students List ────────────────────────────────────────────────────────
 const getStudentsList = async (req, res) => {
   try {
     const students = await User.find({ role: 'student' }).select('-password');
-    const studentIds = students.map((s) => s._id);
-
+    const studentIds = students.map(s => s._id);
     const profiles = await StudentProfile.find({ userId: { $in: studentIds } });
-    const profileMap = {};
-    profiles.forEach((p) => {
-      profileMap[p.userId.toString()] = p;
-    });
 
-    const result = students.map((student) => ({
-      user: student,
-      profile: profileMap[student._id.toString()] || null,
-    }));
+    const profileMap = {};
+    profiles.forEach(p => { profileMap[p.userId.toString()] = p; });
+
+    const result = students.map(student => {
+      const profile = profileMap[student._id.toString()] || null;
+
+      // Compute profile completeness score
+      let profileComplete = 0;
+      if (profile) {
+        if (profile.branch) profileComplete += 20;
+        if (profile.cgpa) profileComplete += 20;
+        if (profile.skills?.length > 0) profileComplete += 20;
+        if (profile.skillScores?.length > 0) profileComplete += 20;
+        if (profile.portfolio?.about) profileComplete += 10;
+        if (profile.avatar) profileComplete += 10;
+      }
+
+      return { user: student, profile, profileComplete };
+    });
 
     res.json({ students: result });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
 
 // ─── Get Placement Analytics ──────────────────────────────────────────────────
 const getPlacementAnalytics = async (req, res) => {

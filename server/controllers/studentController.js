@@ -1,4 +1,4 @@
-﻿const StudentProfile = require('../models/StudentProfile');
+const StudentProfile = require('../models/StudentProfile');
 const Job = require('../models/Job');
 
 const getProfile = async (req, res) => {
@@ -40,9 +40,9 @@ const createOrUpdateProfile = async (req, res) => {
 
 const getPortfolio = async (req, res) => {
   try {
-    const profile = await StudentProfile.findOne({ userId: req.user.id }).select('portfolio');
-    if (!profile) return res.json({ portfolio: null });
-    res.json({ portfolio: profile.portfolio });
+    const profile = await StudentProfile.findOne({ userId: req.user.id }).select('portfolio avatar');
+    if (!profile) return res.json({});
+    res.json({ ...(profile.portfolio?.toObject?.() || profile.portfolio || {}), avatar: profile.avatar });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -50,14 +50,39 @@ const getPortfolio = async (req, res) => {
 
 const updatePortfolio = async (req, res) => {
   try {
-    const { about, github, linkedin, website, projects, certifications, achievements } = req.body;
+    const { headline, about, github, linkedin, website, projects, certifications, achievements, avatar } = req.body;
     let profile = await StudentProfile.findOne({ userId: req.user.id });
     if (!profile) {
       profile = new StudentProfile({ userId: req.user.id });
     }
-    profile.portfolio = { about, github, linkedin, website, projects, certifications, achievements };
+    profile.portfolio = { headline, about, github, linkedin, website, projects, certifications, achievements };
+    if (avatar !== undefined) profile.avatar = avatar;
     await profile.save();
-    res.json({ portfolio: profile.portfolio });
+    res.json({ ...(profile.portfolio?.toObject?.() || profile.portfolio || {}), avatar: profile.avatar });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Public portfolio — no auth required
+const getPublicPortfolio = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const User = require('../models/User');
+    const user = await User.findById(userId).select('name email');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const profile = await StudentProfile.findOne({ userId }).select('portfolio avatar skills skillScores');
+    if (!profile) return res.status(404).json({ message: 'Portfolio not found' });
+
+    res.json({
+      name: user.name,
+      email: user.email,
+      avatar: profile.avatar,
+      skills: profile.skills,
+      skillScores: profile.skillScores,
+      ...(profile.portfolio?.toObject?.() || profile.portfolio || {}),
+    });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -151,7 +176,9 @@ module.exports = {
   createOrUpdateProfile,
   getPortfolio,
   updatePortfolio,
+  getPublicPortfolio,
   getSkillProfile,
   getApplications,
   getDashboardStats,
 };
+

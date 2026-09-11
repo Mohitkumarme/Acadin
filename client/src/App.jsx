@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import Landing from './pages/Landing';
@@ -30,6 +30,8 @@ import PlacementAnalytics from './pages/institution/PlacementAnalytics';
 import SkillTrends from './pages/institution/SkillTrends';
 import ProtectedRoute from './components/shared/ProtectedRoute';
 import LoadingSpinner from './components/shared/LoadingSpinner';
+import PublicPortfolio from './pages/student/PublicPortfolio';
+
 
 export default function App() {
   const { loading } = useAuth();
@@ -39,6 +41,8 @@ export default function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/portfolio/:userId" element={<PublicPortfolio />} />
+
 
       <Route path="/student" element={<ProtectedRoute role="student"><StudentLayout /></ProtectedRoute>}>
         <Route index element={<Navigate to="dashboard" replace />} />

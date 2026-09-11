@@ -24,10 +24,24 @@ export default function Register() {
 
   const handleChange = (e) => { setForm({ ...form, [e.target.name]: e.target.value }); setError(''); };
 
+  const DISPOSABLE_DOMAINS = new Set([
+    'mailinator.com','guerrillamail.com','tempmail.com','10minutemail.com',
+    'throwaway.email','yopmail.com','sharklasers.com','grr.la',
+    'spam4.me','trashmail.com','trashmail.me','trashmail.net',
+    'dispostable.com','mailnull.com','maildrop.cc','spamfree24.org',
+    'fakeinbox.com','mailnesia.com','filzmail.com','spamex.com',
+    'tempr.email','icemail.club','tempinbox.com','trashmail.org',
+    'throwam.com','throwem.com','guerrillamail.info','guerrillamail.biz',
+    'guerrillamail.de','guerrillamail.net','guerrillamail.org',
+    'getairmail.com','discard.email','nospam.ze.tc',
+  ]);
+
   const validate = () => {
     if (!form.name.trim()) return 'Name is required.';
     if (!form.email.trim()) return 'Email is required.';
     if (!/\S+@\S+\.\S+/.test(form.email)) return 'Enter a valid email address.';
+    const domain = form.email.split('@')[1]?.toLowerCase();
+    if (domain && DISPOSABLE_DOMAINS.has(domain)) return 'Disposable/temporary emails are not allowed. Please use a real email address.';
     if (form.password.length < 6) return 'Password must be at least 6 characters.';
     if (form.password !== form.confirmPassword) return 'Passwords do not match.';
     if (!form.role) return 'Please select your role.';

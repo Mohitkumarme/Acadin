@@ -9,6 +9,9 @@ const {
   getApplicants,
   getLearningPrograms,
   postLearningProgram,
+  getCollaborations,
+  postCollaboration,
+  updateCollaboration,
 } = require('../controllers/industryController');
 
 const protect = [auth, allowRoles('industry')];
@@ -30,5 +33,14 @@ router.get('/programs', protect, getLearningPrograms);
 
 // POST /api/industry/programs
 router.post('/programs', protect, postLearningProgram);
+
+// GET /api/industry/collaborations
+router.get('/collaborations', protect, getCollaborations);
+
+// POST /api/industry/collaborations
+router.post('/collaborations', protect, postCollaboration);
+
+// PUT /api/industry/collaborations/:id
+router.put('/collaborations/:id', protect, updateCollaboration);
 
 module.exports = router;

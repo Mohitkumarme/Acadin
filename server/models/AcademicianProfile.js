@@ -37,8 +37,13 @@ const academicianProfileSchema = new mongoose.Schema(
         },
       },
     ],
+    avatar:          { type: String },           // base64 or URL
+    institutionEmail: { type: String },          // college email used for verification
+    collegeWebsite:  { type: String },
+    verified:        { type: Boolean, default: false },
   },
   { timestamps: true }
 );
 
 module.exports = mongoose.model('AcademicianProfile', academicianProfileSchema);
+

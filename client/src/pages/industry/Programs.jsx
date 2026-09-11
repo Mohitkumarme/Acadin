@@ -1,18 +1,29 @@
-﻿import React, { useEffect, useState } from 'react';
-import { FiPlus, FiX, FiBook } from 'react-icons/fi';
+import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiPlus, FiX, FiBook, FiCalendar, FiGlobe } from 'react-icons/fi';
 import { industryAPI } from '../../api/services';
-import SkillBadge from '../../components/shared/SkillBadge';
 import LoadingSpinner from '../../components/shared/LoadingSpinner';
+
+const InputClass = 'w-full bg-dark-50 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:ring-2 focus:ring-indigo-500/50 transition';
+const LabelClass = 'block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5';
+const SelectClass = 'w-full bg-dark-50 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500/50 transition appearance-none';
+
+const typeColors = {
+  certification: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+  workshop:      'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+  training:      'bg-amber-500/10 text-amber-400 border-amber-500/20',
+};
 
 export default function Programs() {
   const [programs, setPrograms] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading]   = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({
     title: '', type: 'certification', description: '', duration: '',
-    mode: 'online', feeAmount: '', startDate: '', endDate: '', skills: []
+    mode: 'online', feeAmount: '', startDate: '', endDate: '', skills: [],
   });
   const [skillInput, setSkillInput] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     industryAPI.getLearningPrograms()
@@ -30,23 +41,23 @@ export default function Programs() {
       setSkillInput('');
     }
   };
-
   const removeSkill = (s) => setForm({ ...form, skills: form.skills.filter(x => x !== s) });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSaving(true);
     try {
       const payload = { ...form };
-      if (form.feeAmount) payload.fee = { amount: Number(form.feeAmount), isFree: Number(form.feeAmount) === 0 };
-      else payload.fee = { isFree: true, amount: 0 };
+      payload.fee = form.feeAmount
+        ? { amount: Number(form.feeAmount), isFree: Number(form.feeAmount) === 0 }
+        : { isFree: true, amount: 0 };
       payload.schedule = { startDate: form.startDate, endDate: form.endDate };
-
       const res = await industryAPI.postLearningProgram(payload);
-      setPrograms([...programs, res.data.program || res.data]);
+      setPrograms([res.data.program || res.data, ...programs]);
       setShowModal(false);
-    } catch (err) {
-      console.error(err);
-    }
+      setForm({ title: '', type: 'certification', description: '', duration: '', mode: 'online', feeAmount: '', startDate: '', endDate: '', skills: [] });
+    } catch {}
+    finally { setSaving(false); }
   };
 
   if (loading) return <LoadingSpinner text="Loading programs..." />;
@@ -54,99 +65,155 @@ export default function Programs() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">Learning Programs</h1>
-        <button onClick={() => setShowModal(true)} className="bg-primary text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 hover:bg-primary-dark transition">
+        <h1 className="text-xl font-bold text-white">Learning Programs</h1>
+        <button
+          onClick={() => setShowModal(true)}
+          className="text-sm bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 hover:shadow-glow-md transition"
+        >
           <FiPlus /> Post Program
         </button>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {programs.length === 0 ? (
-          <div className="col-span-full py-16 text-center text-gray-400">No programs posted yet.</div>
-        ) : programs.map((p, i) => (
-          <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col hover:shadow-md transition">
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="font-semibold text-gray-800 leading-tight">{p.title}</h3>
-              <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full capitalize">{p.type}</span>
-            </div>
-            <p className="text-sm text-gray-500 line-clamp-2 mb-3">{p.description}</p>
-            <div className="flex flex-wrap gap-1 mb-3">
-              {p.skills?.slice(0, 3).map((s, idx) => <SkillBadge key={idx} skill={s} />)}
-            </div>
-            <div className="mt-auto pt-3 border-t border-gray-50 flex justify-between text-xs text-gray-500">
-              <span className="capitalize">{p.mode}</span>
-              <span className="font-semibold text-gray-700">{p.fee?.isFree ? 'Free' : `₹${p.fee?.amount || 0}`}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
-            <div className="flex justify-between items-center mb-5">
-              <h2 className="text-xl font-bold text-gray-800">Post Learning Program</h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600"><FiX size={24} /></button>
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                  <input required value={form.title} onChange={e => setForm({...form, title: e.target.value})} className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary" />
+      {/* Program Cards */}
+      {programs.length === 0 ? (
+        <div className="glass-card rounded-2xl p-16 text-center border border-white/[0.06]">
+          <FiBook className="text-4xl text-gray-600 mx-auto mb-3" />
+          <p className="text-gray-500 text-sm">No programs posted yet.</p>
+        </div>
+      ) : (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {programs.map((p, i) => {
+            const tc = typeColors[p.type] || typeColors.certification;
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className="glass-card rounded-2xl p-5 flex flex-col border border-white/[0.06] hover:border-indigo-500/20 transition"
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-semibold text-gray-200 leading-tight text-sm flex-1 mr-2">{p.title}</h3>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full border font-semibold capitalize flex-shrink-0 ${tc}`}>{p.type}</span>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                  <select value={form.type} onChange={e => setForm({...form, type: e.target.value})} className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary">
-                    <option value="certification">Certification</option>
-                    <option value="workshop">Workshop</option>
-                    <option value="training">Training</option>
-                  </select>
+                <p className="text-xs text-gray-500 line-clamp-2 mb-3 leading-relaxed">{p.description}</p>
+                {p.skills?.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {p.skills.slice(0, 3).map((s, idx) => (
+                      <span key={idx} className="text-[10px] bg-white/[0.04] text-gray-400 border border-white/10 px-2 py-0.5 rounded-full">{s}</span>
+                    ))}
+                    {p.skills.length > 3 && <span className="text-[10px] text-gray-600">+{p.skills.length - 3}</span>}
+                  </div>
+                )}
+                <div className="mt-auto pt-3 border-t border-white/[0.05] flex justify-between text-xs text-gray-500">
+                  <span className="flex items-center gap-1"><FiGlobe size={10} /> {p.mode}</span>
+                  <span className="font-semibold text-gray-300">{p.fee?.isFree ? 'Free' : `₹${p.fee?.amount || 0}`}</span>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea required rows={3} value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary resize-none" />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Skills Taught (Press Enter)</label>
-                <div className="border rounded-lg p-2 flex flex-wrap gap-2 focus-within:ring-2 focus-within:ring-primary">
-                  {form.skills.map(s => (
-                    <span key={s} className="bg-indigo-100 text-indigo-700 text-xs px-2 py-1 rounded flex items-center gap-1">
-                      {s} <FiX className="cursor-pointer" onClick={() => removeSkill(s)} />
-                    </span>
-                  ))}
-                  <input value={skillInput} onChange={e => setSkillInput(e.target.value)} onKeyDown={handleAddSkill} className="flex-1 outline-none text-sm min-w-[150px]" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
-                  <input value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary" placeholder="e.g. 2 Days" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Mode</label>
-                  <select value={form.mode} onChange={e => setForm({...form, mode: e.target.value})} className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary">
-                    <option value="online">Online</option>
-                    <option value="offline">Offline</option>
-                    <option value="hybrid">Hybrid</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fee (₹ 0 = Free)</label>
-                  <input type="number" value={form.feeAmount} onChange={e => setForm({...form, feeAmount: e.target.value})} className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary" placeholder="0" />
-                </div>
-              </div>
-
-              <button type="submit" className="w-full bg-primary text-white py-2.5 rounded-lg font-medium hover:bg-primary-dark transition mt-4">
-                Submit Program
-              </button>
-            </form>
-          </div>
+              </motion.div>
+            );
+          })}
         </div>
       )}
+
+      {/* Modal */}
+      <AnimatePresence>
+        {showModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="glass-card rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-white/[0.08]"
+            >
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-5">
+                  <h2 className="text-lg font-bold text-white">Post Learning Program</h2>
+                  <button onClick={() => setShowModal(false)} className="text-gray-500 hover:text-gray-300 transition">
+                    <FiX size={20} />
+                  </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className={LabelClass}>Title</label>
+                      <input required value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className={InputClass} placeholder="e.g. React Bootcamp" />
+                    </div>
+                    <div>
+                      <label className={LabelClass}>Type</label>
+                      <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })} className={SelectClass}>
+                        <option value="certification">Certification</option>
+                        <option value="workshop">Workshop</option>
+                        <option value="training">Training</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className={LabelClass}>Description</label>
+                    <textarea required rows={3} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className={`${InputClass} resize-none`} placeholder="What will students learn?" />
+                  </div>
+
+                  <div>
+                    <label className={LabelClass}>Skills Covered <span className="text-gray-600 normal-case font-normal">(Enter to add)</span></label>
+                    <div className="bg-dark-50 border border-white/10 rounded-xl p-2.5 flex flex-wrap gap-2 focus-within:ring-2 focus-within:ring-indigo-500/50 min-h-[46px]">
+                      {form.skills.map(s => (
+                        <span key={s} className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+                          {s} <FiX className="cursor-pointer" size={10} onClick={() => removeSkill(s)} />
+                        </span>
+                      ))}
+                      <input value={skillInput} onChange={e => setSkillInput(e.target.value)} onKeyDown={handleAddSkill} className="flex-1 bg-transparent outline-none text-sm text-white placeholder-gray-600 min-w-[120px]" placeholder="e.g. React" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className={LabelClass}>Duration</label>
+                      <input value={form.duration} onChange={e => setForm({ ...form, duration: e.target.value })} className={InputClass} placeholder="e.g. 2 Days" />
+                    </div>
+                    <div>
+                      <label className={LabelClass}>Mode</label>
+                      <select value={form.mode} onChange={e => setForm({ ...form, mode: e.target.value })} className={SelectClass}>
+                        <option value="online">Online</option>
+                        <option value="offline">Offline</option>
+                        <option value="hybrid">Hybrid</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={LabelClass}>Fee ₹ (0 = Free)</label>
+                      <input type="number" value={form.feeAmount} onChange={e => setForm({ ...form, feeAmount: e.target.value })} className={InputClass} placeholder="0" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className={LabelClass}>Start Date</label>
+                      <input type="date" value={form.startDate} onChange={e => setForm({ ...form, startDate: e.target.value })} className={InputClass} />
+                    </div>
+                    <div>
+                      <label className={LabelClass}>End Date</label>
+                      <input type="date" value={form.endDate} onChange={e => setForm({ ...form, endDate: e.target.value })} className={InputClass} />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 rounded-xl font-semibold hover:shadow-glow-md transition disabled:opacity-60"
+                  >
+                    {saving ? 'Posting...' : 'Post Program'}
+                  </button>
+                </form>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

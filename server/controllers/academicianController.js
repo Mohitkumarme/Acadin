@@ -1,16 +1,18 @@
-﻿const AcademicianProfile = require('../models/AcademicianProfile');
+const AcademicianProfile = require('../models/AcademicianProfile');
 const LearningProgram = require('../models/LearningProgram');
 const Collaboration = require('../models/Collaboration');
+
+const isProfileComplete = (p) => !!(p && p.institution && p.department && p.designation && p.institutionEmail);
 
 const getProfile = async (req, res) => {
   try {
     const profile = await AcademicianProfile.findOne({ userId: req.user.id });
-    if (!profile) return res.status(404).json({ message: 'Profile not found' });
-    res.json({ profile });
+    res.json({ profile: profile || null, profileComplete: isProfileComplete(profile) });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
 
 const createOrUpdateProfile = async (req, res) => {
   try {
@@ -117,6 +119,27 @@ const applyToOpportunity = async (req, res) => {
   }
 };
 
+const applyToCollaboration = async (req, res) => {
+  try {
+    const { id: collabId } = req.params;
+    const collab = await Collaboration.findById(collabId);
+    if (!collab || collab.status !== 'open') {
+      return res.status(400).json({ message: 'Collaboration is not open' });
+    }
+    let profile = await AcademicianProfile.findOne({ userId: req.user.id });
+    if (!profile) profile = new AcademicianProfile({ userId: req.user.id });
+
+    const already = profile.appliedOpportunities.some(o => o.opportunityId?.toString() === collabId);
+    if (already) return res.status(400).json({ message: 'Already applied' });
+
+    profile.appliedOpportunities.push({ opportunityId: collabId, type: 'research', status: 'applied' });
+    await profile.save();
+    res.json({ message: 'Applied to collaboration successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 module.exports = {
   getProfile,
   createOrUpdateProfile,
@@ -124,4 +147,6 @@ module.exports = {
   getOpportunities,
   getResearchCollaborations,
   applyToOpportunity,
+  applyToCollaboration,
 };
+

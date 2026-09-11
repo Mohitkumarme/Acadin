@@ -1,15 +1,18 @@
-﻿const IndustryProfile = require('../models/IndustryProfile');
+const IndustryProfile = require('../models/IndustryProfile');
 const Job = require('../models/Job');
 const LearningProgram = require('../models/LearningProgram');
+const Collaboration = require('../models/Collaboration');
 const StudentProfile = require('../models/StudentProfile');
 const User = require('../models/User');
+
+// Helper: check if profile is complete
+const isProfileComplete = (p) => !!(p && p.companyName && p.industry && p.description && p.website && p.location);
 
 // ─── Get Profile ──────────────────────────────────────────
 const getProfile = async (req, res) => {
   try {
     const profile = await IndustryProfile.findOne({ userId: req.user.id });
-    if (!profile) return res.status(404).json({ message: 'Profile not found' });
-    res.json({ profile });
+    res.json({ profile: profile || null, profileComplete: isProfileComplete(profile) });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -134,6 +137,41 @@ const postLearningProgram = async (req, res) => {
   }
 };
 
+// ─── Get Collaborations ───────────────────────────────────
+const getCollaborations = async (req, res) => {
+  try {
+    const collabs = await Collaboration.find({ postedBy: req.user.id }).sort({ createdAt: -1 });
+    res.json({ collaborations: collabs });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// ─── Post Collaboration ───────────────────────────────────
+const postCollaboration = async (req, res) => {
+  try {
+    const collab = await Collaboration.create({ ...req.body, postedBy: req.user.id });
+    res.status(201).json({ collaboration: collab });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// ─── Update Collaboration (close/reopen) ──────────────────
+const updateCollaboration = async (req, res) => {
+  try {
+    const collab = await Collaboration.findOneAndUpdate(
+      { _id: req.params.id, postedBy: req.user.id },
+      { $set: req.body },
+      { new: true }
+    );
+    if (!collab) return res.status(404).json({ message: 'Collaboration not found' });
+    res.json({ collaboration: collab });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 module.exports = {
   getProfile,
   createOrUpdateProfile,
@@ -141,4 +179,8 @@ module.exports = {
   getApplicants,
   getLearningPrograms,
   postLearningProgram,
+  getCollaborations,
+  postCollaboration,
+  updateCollaboration,
 };
+

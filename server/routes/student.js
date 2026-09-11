@@ -7,6 +7,7 @@ const {
   createOrUpdateProfile,
   getPortfolio,
   updatePortfolio,
+  getPublicPortfolio,
   getSkillProfile,
   getApplications,
   getDashboardStats,
@@ -14,6 +15,11 @@ const {
 
 const protect = [auth, allowRoles('student')];
 
+// ─── Public routes (no auth) ───────────────────────────────────────────────
+// GET /api/student/portfolio/:userId  — recruiter-facing public portfolio
+router.get('/portfolio/:userId', getPublicPortfolio);
+
+// ─── Protected routes ──────────────────────────────────────────────────────
 // GET /api/student/profile
 router.get('/profile', protect, getProfile);
 

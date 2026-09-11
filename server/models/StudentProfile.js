@@ -31,6 +31,7 @@ const studentProfileSchema = new mongoose.Schema(
       },
     ],
     portfolio: {
+      headline: { type: String },
       about: { type: String },
       github: { type: String },
       linkedin: { type: String },
@@ -42,6 +43,7 @@ const studentProfileSchema = new mongoose.Schema(
           techStack: { type: String },
           link: { type: String },
           status: { type: String },
+          image: { type: String }, // base64 or URL
         },
       ],
       certifications: [
@@ -50,6 +52,8 @@ const studentProfileSchema = new mongoose.Schema(
           issuer: { type: String },
           date: { type: Date },
           credentialUrl: { type: String },
+          link: { type: String },
+          image: { type: String }, // base64 or URL
         },
       ],
       achievements: [
@@ -57,6 +61,8 @@ const studentProfileSchema = new mongoose.Schema(
           title: { type: String },
           description: { type: String },
           date: { type: Date },
+          link: { type: String },
+          image: { type: String }, // base64 or URL
         },
       ],
     },

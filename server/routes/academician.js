@@ -8,6 +8,7 @@ const {
   getOpportunities,
   getResearchCollaborations,
   applyToOpportunity,
+  applyToCollaboration,
   getDashboardStats,
 } = require('../controllers/academicianController');
 
@@ -25,10 +26,13 @@ router.put('/profile', protect, createOrUpdateProfile);
 // GET /api/academician/opportunities
 router.get('/opportunities', protect, getOpportunities);
 
-// POST /api/academician/opportunities/:id/apply  ← matches frontend
+// POST /api/academician/opportunities/:id/apply
 router.post('/opportunities/:id/apply', protect, applyToOpportunity);
 
 // GET /api/academician/research
 router.get('/research', protect, getResearchCollaborations);
+
+// POST /api/academician/research/:id/apply
+router.post('/research/:id/apply', protect, applyToCollaboration);
 
 module.exports = router;
