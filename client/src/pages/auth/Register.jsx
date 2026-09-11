@@ -1,16 +1,17 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import {
   FiBook, FiUser, FiBriefcase, FiAward, FiHome,
-  FiMail, FiLock, FiEye, FiEyeOff, FiAlertCircle, FiCheckCircle
+  FiMail, FiLock, FiEye, FiEyeOff, FiAlertCircle, FiCheckCircle, FiArrowLeft
 } from 'react-icons/fi';
 import { authAPI } from '../../api/services';
 
 const roles = [
-  { value: 'student',     label: 'Student',       icon: FiUser,      desc: 'Find internships & showcase skills', color: 'border-indigo-300 bg-indigo-50 text-indigo-700' },
-  { value: 'industry',    label: 'Industry',      icon: FiBriefcase, desc: 'Hire talent & post opportunities',    color: 'border-purple-300 bg-purple-50 text-purple-700' },
-  { value: 'academician', label: 'Academician',   icon: FiAward,     desc: 'Access FDPs & collaborations',        color: 'border-green-300 bg-green-50 text-green-700' },
-  { value: 'institution', label: 'Institution',   icon: FiHome,      desc: 'Track placements & analytics',        color: 'border-orange-300 bg-orange-50 text-orange-700' },
+  { value: 'student',     label: 'Student',     icon: FiUser,      desc: 'Find internships & showcase skills',  gradient: 'from-indigo-500 to-blue-500' },
+  { value: 'industry',    label: 'Industry',    icon: FiBriefcase, desc: 'Hire talent & post opportunities',     gradient: 'from-purple-500 to-violet-500' },
+  { value: 'academician', label: 'Academician', icon: FiAward,     desc: 'Access FDPs & collaborations',         gradient: 'from-emerald-500 to-teal-500' },
+  { value: 'institution', label: 'Institution', icon: FiHome,      desc: 'Track placements & analytics',         gradient: 'from-amber-500 to-orange-500' },
 ];
 
 export default function Register() {
@@ -51,90 +52,127 @@ export default function Register() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-white flex items-center justify-center px-4">
-        <div className="text-center">
-          <FiCheckCircle className="text-green-500 text-5xl mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Registration Successful!</h2>
+      <div className="min-h-screen bg-dark flex items-center justify-center px-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center"
+        >
+          <div className="w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-6">
+            <FiCheckCircle className="text-emerald-400 text-3xl" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">Registration Successful!</h2>
           <p className="text-gray-500">Redirecting to login...</p>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-lg">
+    <div className="min-h-screen bg-dark flex items-center justify-center px-4 py-10 relative overflow-hidden">
+      {/* Ambient orbs */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-indigo-500/[0.06] rounded-full blur-[120px] animate-pulse-glow" />
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-purple-500/[0.05] rounded-full blur-[100px] animate-pulse-glow" style={{ animationDelay: '1.5s' }} />
+        <div className="absolute inset-0 bg-dot-grid opacity-20" />
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="relative w-full max-w-lg"
+      >
+        <Link to="/" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-400 mb-8 transition-colors">
+          <FiArrowLeft /> Back to Home
+        </Link>
+
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 text-primary font-bold text-2xl">
-            <FiBook className="text-3xl" /><span>Acadin</span>
+          <Link to="/" className="inline-flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-glow-sm">
+              <FiBook className="text-white" />
+            </div>
+            <span className="font-bold text-xl text-white tracking-tight">Acadin</span>
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900 mt-4 mb-1">Create your account</h1>
+          <h1 className="text-2xl font-bold text-white mt-6 mb-1">Create your account</h1>
           <p className="text-gray-500 text-sm">Join thousands of students, companies, and educators</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <div className="glass-card rounded-2xl p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg">
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-xl"
+              >
                 <FiAlertCircle className="flex-shrink-0" />{error}
-              </div>
+              </motion.div>
             )}
 
             {/* Role selector */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">I am a...</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">I am a...</label>
               <div className="grid grid-cols-2 gap-3">
                 {roles.map((r) => (
-                  <button
+                  <motion.button
                     key={r.value} type="button"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => { setForm({ ...form, role: r.value }); setError(''); }}
-                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition text-center ${
-                      form.role === r.value ? `${r.color} border-opacity-100` : 'border-gray-200 hover:border-gray-300'
+                    className={`flex flex-col items-center gap-1.5 p-3.5 rounded-xl border-2 transition text-center ${
+                      form.role === r.value
+                        ? 'border-indigo-500/50 bg-indigo-500/10'
+                        : 'border-white/10 hover:border-white/20 bg-white/[0.02]'
                     }`}
                   >
-                    <r.icon className="text-xl" />
-                    <span className="text-sm font-semibold">{r.label}</span>
+                    <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${r.gradient} flex items-center justify-center ${
+                      form.role === r.value ? 'shadow-glow-sm' : ''
+                    }`}>
+                      <r.icon className="text-white text-sm" />
+                    </div>
+                    <span className={`text-sm font-semibold ${form.role === r.value ? 'text-white' : 'text-gray-300'}`}>{r.label}</span>
                     <span className="text-xs text-gray-500 leading-tight">{r.desc}</span>
-                  </button>
+                  </motion.button>
                 ))}
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">Full Name</label>
               <div className="relative">
-                <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input name="name" value={form.name} onChange={handleChange} placeholder="John Doe"
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none transition" />
+                  className="w-full pl-10 pr-4 py-2.5 bg-dark-50 border border-white/10 rounded-xl text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 outline-none transition" />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email address</label>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">Email address</label>
               <div className="relative">
-                <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input name="email" type="email" value={form.email} onChange={handleChange} placeholder="you@example.com"
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none transition" />
+                  className="w-full pl-10 pr-4 py-2.5 bg-dark-50 border border-white/10 rounded-xl text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 outline-none transition" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1.5">Password</label>
                 <div className="relative">
-                  <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                   <input name="password" type={showPassword ? 'text' : 'password'} value={form.password} onChange={handleChange} placeholder="Min 6 chars"
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none transition" />
+                    className="w-full pl-10 pr-4 py-2.5 bg-dark-50 border border-white/10 rounded-xl text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 outline-none transition" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Confirm Password</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1.5">Confirm Password</label>
                 <div className="relative">
-                  <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                   <input name="confirmPassword" type={showPassword ? 'text' : 'password'} value={form.confirmPassword} onChange={handleChange} placeholder="Repeat"
-                    className="w-full pl-10 pr-9 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none transition" />
+                    className="w-full pl-10 pr-9 py-2.5 bg-dark-50 border border-white/10 rounded-xl text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 outline-none transition" />
                   <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300">
                     {showPassword ? <FiEyeOff /> : <FiEye />}
                   </button>
                 </div>
@@ -142,17 +180,22 @@ export default function Register() {
             </div>
 
             <button type="submit" disabled={loading}
-              className="w-full bg-primary text-white py-2.5 rounded-lg font-medium text-sm hover:bg-primary-dark transition disabled:opacity-60">
-              {loading ? 'Creating account...' : 'Create Account'}
+              className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 rounded-xl font-semibold text-sm hover:shadow-glow-md transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100">
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                  Creating account...
+                </span>
+              ) : 'Create Account'}
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-500 mt-5">
+          <p className="text-center text-sm text-gray-500 mt-6">
             Already have an account?{' '}
-            <Link to="/login" className="text-primary font-medium hover:underline">Sign in</Link>
+            <Link to="/login" className="text-indigo-400 font-medium hover:text-indigo-300 transition-colors">Sign in</Link>
           </p>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
