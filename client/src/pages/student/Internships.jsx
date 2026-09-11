@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { FiSearch, FiFilter, FiMapPin, FiClock, FiDollarSign, FiCalendar, FiCheckCircle, FiX } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiSearch, FiMapPin, FiClock, FiDollarSign, FiCalendar, FiCheckCircle, FiX } from 'react-icons/fi';
 import { jobAPI } from '../../api/services';
 import SkillBadge from '../../components/shared/SkillBadge';
 import LoadingSpinner from '../../components/shared/LoadingSpinner';
@@ -65,53 +66,70 @@ export default function Internships() {
 
   const clearFilters = () => { setSearch(''); setModeFilter('All'); setTypeFilter('All'); };
 
+  const typeBadgeColor = (type) => ({
+    internship: 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20',
+    fulltime: 'bg-purple-500/10 text-purple-400 border border-purple-500/20',
+    parttime: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+  }[type] || 'bg-gray-500/10 text-gray-400 border border-gray-500/20');
+
+  const modeBadgeColor = (mode) => ({
+    remote: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+    onsite: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+    hybrid: 'bg-teal-500/10 text-teal-400 border border-teal-500/20',
+  }[mode] || 'bg-gray-500/10 text-gray-400 border border-gray-500/20');
+
   return (
     <div className="space-y-5">
       {/* Toast */}
-      {toast && (
-        <div className="fixed top-4 right-4 z-50 bg-white border border-gray-200 shadow-lg rounded-xl px-5 py-3 text-sm text-gray-700 flex items-center gap-3 animate-fade-in">
-          {toast}
-          <button onClick={() => setToast('')}><FiX className="text-gray-400" /></button>
-        </div>
-      )}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, x: 20 }}
+            animate={{ opacity: 1, y: 0, x: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-4 right-4 z-50 glass-card border border-white/10 shadow-glow-sm rounded-xl px-5 py-3 text-sm text-gray-200 flex items-center gap-3"
+          >
+            {toast}
+            <button onClick={() => setToast('')}><FiX className="text-gray-500 hover:text-gray-300" /></button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">Internships & Jobs</h1>
+        <h1 className="text-xl font-bold text-white">Internships & Jobs</h1>
         <span className="text-sm text-gray-500">{jobs.length} opportunities found</span>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-3">
-        {/* Search */}
+      <div className="glass-card rounded-2xl p-4 space-y-3">
         <div className="relative">
-          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search by title, company, or skill..."
-            className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary"
+            className="w-full pl-9 pr-4 py-2.5 bg-dark-50 border border-white/10 rounded-xl text-sm text-white placeholder-gray-500 outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition"
           />
         </div>
-        {/* Filter row */}
         <div className="flex flex-wrap gap-3 items-center">
-          <div className="flex gap-1 bg-gray-50 p-1 rounded-lg">
+          <div className="flex gap-1 bg-white/[0.03] p-1 rounded-xl border border-white/[0.06]">
             {TYPES_FILTER.map(t => (
               <button key={t} onClick={() => setTypeFilter(t)}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition ${typeFilter === t ? 'bg-primary text-white' : 'text-gray-500 hover:text-gray-700'}`}>
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${typeFilter === t ? 'bg-indigo-500 text-white shadow-glow-sm' : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.05]'}`}>
                 {t}
               </button>
             ))}
           </div>
-          <div className="flex gap-1 bg-gray-50 p-1 rounded-lg">
+          <div className="flex gap-1 bg-white/[0.03] p-1 rounded-xl border border-white/[0.06]">
             {MODES.map(m => (
               <button key={m} onClick={() => setModeFilter(m)}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition ${modeFilter === m ? 'bg-primary text-white' : 'text-gray-500 hover:text-gray-700'}`}>
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${modeFilter === m ? 'bg-indigo-500 text-white shadow-glow-sm' : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.05]'}`}>
                 {m}
               </button>
             ))}
           </div>
           {(search || modeFilter !== 'All' || typeFilter !== 'All') && (
-            <button onClick={clearFilters} className="text-xs text-red-500 hover:underline flex items-center gap-1">
+            <button onClick={clearFilters} className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors">
               <FiX /> Clear
             </button>
           )}
@@ -122,60 +140,64 @@ export default function Internships() {
       {loading ? (
         <LoadingSpinner text="Fetching opportunities..." />
       ) : jobs.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-gray-500">
           <FiSearch className="text-4xl mx-auto mb-3 opacity-40" />
           <p>No jobs match your filters.</p>
-          <button onClick={clearFilters} className="mt-3 text-primary hover:underline text-sm">Clear filters</button>
+          <button onClick={clearFilters} className="mt-3 text-indigo-400 hover:text-indigo-300 text-sm transition-colors">Clear filters</button>
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <motion.div
+          initial="hidden"
+          animate="show"
+          variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05 } } }}
+          className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"
+        >
           {jobs.map(job => {
             const isApplied = appliedIds.includes(job._id);
             const visibleSkills = (job.requiredSkills || []).slice(0, 3);
             const extraSkills   = (job.requiredSkills || []).length - 3;
-            const typeBadge = job.type === 'internship' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700';
-            const modeBadge = {
-              remote: 'bg-green-100 text-green-700',
-              onsite: 'bg-orange-100 text-orange-700',
-              hybrid: 'bg-teal-100 text-teal-700',
-            }[job.mode] || 'bg-gray-100 text-gray-600';
 
             return (
-              <div key={job._id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col gap-3 hover:shadow-md transition">
+              <motion.div
+                key={job._id}
+                variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.4 } } }}
+                whileHover={{ y: -4, transition: { type: 'spring', stiffness: 300, damping: 20 } }}
+                className="glass-card rounded-2xl p-5 flex flex-col gap-3 hover:glass-card-hover transition-all duration-300"
+              >
                 {/* Header */}
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-glow-sm">
                     {job.companyName?.[0] || 'C'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-800 text-sm leading-tight truncate">{job.title}</h3>
+                    <h3 className="font-semibold text-white text-sm leading-tight truncate">{job.title}</h3>
                     <p className="text-xs text-gray-500">{job.companyName}</p>
                   </div>
                 </div>
 
                 {/* Badges */}
                 <div className="flex flex-wrap gap-1.5">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${typeBadge}`}>{job.type}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${modeBadge}`}>{job.mode}</span>
+                  <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium capitalize ${typeBadgeColor(job.type)}`}>{job.type}</span>
+                  <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium capitalize ${modeBadgeColor(job.mode)}`}>{job.mode}</span>
                 </div>
 
                 {/* Skills */}
                 <div className="flex flex-wrap gap-1">
                   {visibleSkills.map((s, i) => <SkillBadge key={i} skill={s} />)}
-                  {extraSkills > 0 && <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">+{extraSkills}</span>}
+                  {extraSkills > 0 && <span className="text-xs bg-white/[0.05] text-gray-400 px-2 py-0.5 rounded-full border border-white/[0.06]">+{extraSkills}</span>}
                 </div>
 
                 {/* Meta */}
                 <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-gray-500">
                   {job.location && <span className="flex items-center gap-1"><FiMapPin size={10} /> {job.location}</span>}
                   {job.stipend?.amount ? (
-                    <span className="flex items-center gap-1"><FiDollarSign size={10} /> ₹{job.stipend.amount}/mo</span>
+                    <span className="flex items-center gap-1"><FiDollarSign size={10} /> ₹{job.stipend.amount.toLocaleString()}/mo</span>
                   ) : job.salary?.min ? (
                     <span className="flex items-center gap-1"><FiDollarSign size={10} /> {job.salary.min}–{job.salary.max} LPA</span>
                   ) : null}
                   {job.duration && <span className="flex items-center gap-1"><FiClock size={10} /> {job.duration}</span>}
                   {job.applicationDeadline && (
-                    <span className="flex items-center gap-1 text-red-400"><FiCalendar size={10} /> {new Date(job.applicationDeadline).toLocaleDateString()}</span>
+                    <span className="flex items-center gap-1 text-amber-400/70"><FiCalendar size={10} /> {new Date(job.applicationDeadline).toLocaleDateString()}</span>
                   )}
                 </div>
 
@@ -183,18 +205,23 @@ export default function Internships() {
                 <button
                   onClick={() => handleApply(job)}
                   disabled={isApplied || applying === job._id}
-                  className={`mt-auto w-full py-2 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2 ${
+                  className={`mt-auto w-full py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
                     isApplied
-                      ? 'bg-green-100 text-green-700 cursor-default'
-                      : 'bg-primary text-white hover:bg-primary-dark disabled:opacity-60'
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 cursor-default'
+                      : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:shadow-glow-md hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60'
                   }`}
                 >
-                  {isApplied ? <><FiCheckCircle /> Applied</> : applying === job._id ? 'Applying...' : 'Apply Now'}
+                  {isApplied ? <><FiCheckCircle /> Applied</> : applying === job._id ? (
+                    <span className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                      Applying...
+                    </span>
+                  ) : 'Apply Now'}
                 </button>
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       )}
 
       {/* Pagination */}
@@ -202,7 +229,7 @@ export default function Internships() {
         <div className="flex justify-center gap-2 pt-2">
           {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
             <button key={p} onClick={() => { setPage(p); fetchJobs(p); }}
-              className={`w-8 h-8 rounded-full text-sm font-medium ${page === p ? 'bg-primary text-white' : 'bg-white border text-gray-600 hover:border-primary'}`}>
+              className={`w-9 h-9 rounded-xl text-sm font-medium transition-all ${page === p ? 'bg-indigo-500 text-white shadow-glow-sm' : 'glass-card text-gray-400 hover:text-white hover:border-indigo-500/30'}`}>
               {p}
             </button>
           ))}
